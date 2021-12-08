@@ -102,7 +102,7 @@ memory_status_t stm95m_wait_wip_completed(stm95m_handle_t *handle, size_t cs) {
     return MEMORY_STATUS_OK;
 }
 
-memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, uint8_t *data, uint32_t length, size_t cs) {
+memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs) {
     memory_status_t rc = stm95m_check_handle(handle);
     if (rc != MEMORY_STATUS_OK) {
         return rc;
@@ -113,6 +113,12 @@ memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, uint8_t 
     header[1] = address >> 16;
     header[2] = address >> 8;
     header[3] = address;
+
+    // Reset WIP-bit in status register
+    uint8_t wip;
+    stm95m_read_register(handle, &wip, cs);
+    wip &= ~ WIP;
+    stm95m_write_register(handle, wip, cs);
 
     if (stm95m_write_latch_enable(handle, cs) != MEMORY_STATUS_OK) {
         return MEMORY_STATUS_NOK;
