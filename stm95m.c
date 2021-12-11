@@ -102,7 +102,8 @@ memory_status_t stm95m_wait_wip_completed(stm95m_handle_t *handle, size_t cs) {
     return MEMORY_STATUS_OK;
 }
 
-memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs) {
+memory_status_t
+stm95m_write(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs) {
     memory_status_t rc = stm95m_check_handle(handle);
     if (rc != MEMORY_STATUS_OK) {
         return rc;
@@ -117,7 +118,7 @@ memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, const ui
     // Reset WIP-bit in status register
     uint8_t wip;
     stm95m_read_register(handle, &wip, cs);
-    wip &= ~ WIP;
+    wip &= ~WIP;
     stm95m_write_register(handle, wip, cs);
 
     if (stm95m_write_latch_enable(handle, cs) != MEMORY_STATUS_OK) {
@@ -148,6 +149,31 @@ memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, const ui
     }
 
     return rc;
+}
+
+memory_status_t
+stm95m_write_safe(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs) {
+    if (length > MAX_BURST_SIZE) {
+        size_t writes = length / MAX_BURST_SIZE;
+        if (length % MAX_BURST_SIZE != 0) {
+            writes++;
+        }
+
+        for (size_t i = 0; i < writes; i++) {
+            size_t write_length = MAX_BURST_SIZE;
+            if (i == writes - 1) {
+                write_length = length % MAX_BURST_SIZE;
+            }
+            memory_status_t rc = stm95m_write(handle, address + i * MAX_BURST_SIZE, data + i * MAX_BURST_SIZE,
+                                              write_length, cs);
+            if (rc != MEMORY_STATUS_OK) {
+                return rc;
+            }
+        }
+    } else {
+        return stm95m_write(handle, address, data, length, cs);
+    }
+    return MEMORY_STATUS_OK;
 }
 
 memory_status_t stm95m_read_register(stm95m_handle_t *handle, uint8_t *data, size_t cs) {

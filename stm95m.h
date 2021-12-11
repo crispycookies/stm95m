@@ -18,6 +18,9 @@
 #define _STM95M_H
 
 #include <stdint.h>
+#include <stddef.h>
+
+#define MAX_BURST_SIZE 62
 
 /**
  * Return values
@@ -64,6 +67,8 @@ memory_status_t stm95m_read(stm95m_handle_t *handle, uint32_t address, uint8_t *
  * @return MEMORY_STATUS_OK on success, MEMORY_STATUS_NOK on failure
  */
 memory_status_t stm95m_write(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs);
+
+memory_status_t stm95m_write_safe(stm95m_handle_t *handle, uint32_t address, const uint8_t *data, uint32_t length, size_t cs);
 
 /**
  * @brief Reads the status register of the ST95M memory.
